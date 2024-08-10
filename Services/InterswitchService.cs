@@ -1,0 +1,159 @@
+using System.Runtime.InteropServices.JavaScript;
+using System.Text;
+using Microsoft.AspNetCore.Http.HttpResults;
+using RestSharp;
+using Settle_App.Helpers;
+using System;
+using System.Threading.Tasks;
+using System.Text.Json;
+using Microsoft.AspNetCore.Authentication.BearerToken;
+using Settle_App.Models.DTO;
+
+namespace Settle_App.Services
+{
+
+
+
+    public class InterswitchAuthService()
+    {
+        public async Task<string> GetAccessTokensync()
+        {
+            var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{"IKIA920656DA4CDDF5FBEA6E470F503ACBE3326F89EA"}:{"uJ36GtDU5uQT3hy"}"));
+            var options = new RestClientOptions("https://apps.qa.interswitchng.com/passport/oauth/token?grant_type=client_credentials");
+            var client = new RestClient(options);
+            var request = new RestRequest("");
+            request.AddHeader("accept", "application/json");
+            request.AddHeader("Authorization", $"Basic {credentials}");
+            request.AddHeader("Content-Type", "application/x-www-form-urlencoded");
+            var response = await client.PostAsync(request);
+            if (!response.IsSuccessful)
+            {
+                throw new Exception($"Could not retrieve access code! - {response.Content}");
+            }
+
+            var accessTokenResponse = JsonSerializer.Deserialize<AccessTokenResponse>(response?.Content);
+
+            var interswitchReqDto = new InterswitchReqDTO
+            {
+                AccessToken = accessTokenResponse?.AccessToken,
+                TokenType = accessTokenResponse?.TokenType,
+                ExpiresIn = accessTokenResponse?.ExpiresIn ?? 0 // Handle null case
+            };
+
+            return JsonSerializer.Serialize(interswitchReqDto);
+            // return new InterswitchReqDTO
+            // {
+            //     AccessToken = accessTokenResponse.AccessToken,
+            //     TokenType = accessTokenResponse.TokenType,
+            //     // ExpiresIn accessTokenResponse.ExpiresIn
+            // };
+            // return response.Content;
+
+            // return accessTokenResponse?.AccessToken;
+
+        }
+
+
+    }
+    public class InterswitchService(IConfiguration configuration, InterswitchAuthService interswitchAuthService)
+    {
+        private readonly IConfiguration configuration = configuration;
+        // private readonly InterswitchAuthService interswitchAuthService = interswitchAuthService;
+
+        public async Task<PaymentInitializationResponseDto> InitializePaymentAsync( string amount, string customerId, string customerEmail)
+        {
+            try
+            {
+                var accessToken = await interswitchAuthService.GetAccessTokensync();
+                if (string.IsNullOrEmpty(accessToken))
+                    throw new Exception("Could not retrieve access token");
+
+
+                var options = new RestClientOptions("https://qa.interswitchng.com/paymentgateway/api/v1/paybill");
+                var client = new RestClient(options);
+                var request = new RestRequest("");
+                request.AddHeader("accept", "application/json");
+                request.AddHeader("Authorization", $"Bearer {accessToken}");
+                var PaybillRequestDto = new PaybillRequestDto
+                {
+                    MerchantCode = "MX6072",
+                    PayableCode = "9405967",
+                    Amount = amount,
+                    RedirectUrl = "https://webpay-ui.k8.isw.la/demo-response",
+                    CustomerId = customerId,
+                    CurrencyCode = "566",
+                    CustomerEmail = customerEmail
+                };
+                request.AddJsonBody(PaybillRequestDto);
+                var response = await client.PostAsync(request);
+                if (string.IsNullOrEmpty(response.Content))
+                {
+                    throw new Exception($"Payment could not be initialized: {response.ErrorMessage}");
+                }
+                var _response = JsonSerializer.Deserialize<PaymentInitializationResponseDto>(response.Content);
+
+                return _response;
+
+            }
+            catch (Exception Err)
+            {
+
+                throw new Exception($"An error occurred while initializing the payment: {Err.Message}");
+            }
+
+
+        }
+
+        //verify that payment was successful
+        public async Task<PaymentVerificationResponseDto> VerifyPaymentAsync( string transactionReference, decimal amount)
+        {
+            try
+            {
+                var accessToken = await interswitchAuthService.GetAccessTokensync();
+
+                if(string.IsNullOrEmpty(accessToken)){
+                    throw new Exception("Couldn't get acces token");
+                }
+                // LIVE BASE URL: https://webpay.interswitchng.com
+                var options = new RestClientOptions("https://qa.interswitchng.com/collections/api/v1/gettransaction.json");
+                var client = new RestClient(options);
+
+                var verificationUrl = $"?merchantcode=MX200816&transactionreference={transactionReference}&amount={amount}";
+
+                var request = new RestRequest("");
+
+                request.AddHeader("Content-Type", "application/json");
+                request.AddHeader("Authorization", $"Bearer {accessToken}");
+                var response = await client.PostAsync(request);
+
+                if (string.IsNullOrEmpty(response.Content))
+                {
+                    throw new Exception($"No content was returned from the server: {response.StatusCode}");
+                }
+
+                var verificationResponse = JsonSerializer.Deserialize<PaymentVerificationResponseDto>(response.Content);
+
+                return verificationResponse;
+
+
+            }
+            catch (Exception err)
+            {
+                
+                throw new Exception($"An error occurred while verifying the payment: {err.Message}");
+            }
+
+        }
+    }
+}
+
+/*
+
+var options = new RestClientOptions("https://qa.interswitchng.com/paymentgateway/api/v1/paybill");
+var client = new RestClient(options);
+var request = new RestRequest("");
+request.AddHeader("accept", "application/json");
+request.AddHeader("Authorization", "Bearer eyJhbGciOiJSUzI1NiJ9.eyJhdWQiOlsicGFzc3BvcnQiLCJwcm9qZWN0LXgtbWVyY2hhbnQiXSwic2NvcGUiOlsicHJvZmlsZSJdLCJ2aXJ0dWFsX2FjY291bnRfcHJvdmlkZXIiOiJXRU1BX1BST0QiLCJjbGllbnRfbmFtZSI6IldFTUEgVVNTRCIsImp0aSI6ImZmNWQ2NGIzLWQyZDYtNDc2ZC05NmVlLTUzZTAzYjE4ZmE2YiIsImNsaWVudF9pZCI6IklLSUE3ODlEQkNFRkZGMTIxNkI5NUY1NkFGNDIzNDlERTY2QTlGOUZGQzA1In0.SiLNe80_MERRYrC_Zjz3Pv8nzeK2qYS6o1gNdYoWd3pIaY7JsMo-sZKCyseZae3jXqMwhpSfyAvCM85UkzgsywPFx4oJK_KGt-eqzZbSEiDLXQb-3qsjNCDCqUYxRGfkGesodWvoh22oot196kSlnyLheH6k_TYgV8Ud84lwnAuwz8ydidaubue42vFMeYEfrIy99E2rhP2KJjcg0XGVzUh4RvDu1IR9BSSFN8zWjVcX5EOHEUzxt9CsioojiXKfdQ6YGGh7iLjb1qT8VWzu_CmewhuIFPHdDoTS0mJfulbykSWN3_5m_TFZpR7G3Ybwd5DVTfX9xLbwNJm_C3TL-Q");
+request.AddJsonBody("{\"merchantCode\":\"MX6072\",\"payableCode\":\"9405967\",\"amount\":\"5000\",\"redirectUrl\":\"https://webpay-ui.k8.isw.la/demo-response\",\"customerId\":\"johndoe@gmail.com\",\"currencyCode\":\"566\",\"customerEmail\":\"johndoe@gmail.com\"}", false);
+var response = await client.PostAsync(request);
+*/

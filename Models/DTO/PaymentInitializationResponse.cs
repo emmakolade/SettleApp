@@ -1,0 +1,16 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Settle_App.Models.DTO
+{
+    public class PaymentInitializationResponseDto
+    {
+       
+        public string TransactionReference { get; set; }
+        public string Amount { get; set; }
+        public string RedirectUrl { get; set; }
+        public string PaymentUrl { get; set; }
+        public string CustomerId { get; set; }
+        // Add other fields if necessary
+    }
+
+}
