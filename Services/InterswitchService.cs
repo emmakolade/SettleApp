@@ -19,6 +19,7 @@ namespace Settle_App.Services
     public class InterswitchAuthService()
     {
         public async Task<string> GetAccessTokensync()
+        
         {
             var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{"IKIA920656DA4CDDF5FBEA6E470F503ACBE3326F89EA"}:{"uJ36GtDU5uQT3hy"}"));
             var options = new RestClientOptions("https://apps.qa.interswitchng.com/passport/oauth/token?grant_type=client_credentials");
@@ -77,13 +78,14 @@ namespace Settle_App.Services
                 request.AddHeader("Authorization", $"Bearer {accessToken}");
                 var PaybillRequestDto = new PaybillRequestDto
                 {
-                    MerchantCode = "MX6072",
-                    PayableCode = "9405967",
+                    MerchantCode = "MX200816",
+                    PayableCode = "Default_Payable_MX200816",
                     Amount = amount,
-                    RedirectUrl = "https://expert.joinebo.app",
+                    RedirectUrl = "https://webpay-ui.k8.isw.la/demo-response",
                     CustomerId = customerId,
                     CurrencyCode = "566",
-                    CustomerEmail = customerEmail
+                    CustomerEmail = customerEmail,
+                    TransactionReference = Guid.NewGuid()
                 };
                 request.AddJsonBody(PaybillRequestDto);
                 var response = await client.PostAsync(request);
@@ -96,7 +98,7 @@ namespace Settle_App.Services
                 {
                     PayableCode = _json.GetProperty("payableCode").GetString(),
                     Amount = _json.GetProperty("amount").GetInt32().ToString(),
-                    TransactionReference = _json.GetProperty("reference").GetString(),
+                    TransactionReference = _json.GetProperty("transactionReference").GetString(),
                     RedirectUrl = _json.GetProperty("redirectUrl").GetString(),
                     PaymentUrl = _json.GetProperty("paymentUrl").GetString(),
                     CustomerId = _json.GetProperty("customerId").GetString()
@@ -118,67 +120,23 @@ namespace Settle_App.Services
         public async Task<PaymentVerificationResponseDto> VerifyPaymentAsync(string transactionReference, decimal amount)
         {
             try
-
+// MX6072
             {
-                // var accessToken = await interswitchAuthService.GetAccessTokensync();
-                // Console.WriteLine("start 1111");
-
-                // if (string.IsNullOrEmpty(accessToken))
-                // {
-                //     throw new Exception("Couldn't get access token");
-                // }
-
-                // // Base URL for the API
-                // var options = new RestClientOptions("https://qa.interswitchng.com/collections/api/v1/gettransaction.json");
-                // var client = new RestClient(options);
-
-                // // Construct the verification URL with query parameters
-                // var verificationUrl = $"?merchantcode=MX200816&transactionreference={transactionReference}&amount={amount}";
-
-                // var request = new RestRequest(verificationUrl, Method.Get);
-
-                // // Add necessary headers
-                // request.AddHeader("Content-Type", "application/json");
-                // request.AddHeader("Authorization", $"Bearer {accessToken}");
-
-                // Console.WriteLine($"request====>{request}");
-
-                // // Make the GET request
-                // var response = await client.ExecuteAsync(request);
-                // Console.WriteLine($"response====>{response.Content}");
-
-                // // Check if the response has content
-                // if (string.IsNullOrEmpty(response.Content))
-                // {
-                //     throw new Exception($"No content was returned from the server: {response.Content}");
-                // }
-
-                // // Deserialize the response content to your DTO
-                // var verificationResponse = JsonSerializer.Deserialize<PaymentVerificationResponseDto>(response.Content);
-
-                // if (verificationResponse.Amount == 0 || verificationResponse.ResponseCode  == "Z25"){
-                //     throw new Exception($"Payment verification failed: {verificationResponse.ResponseDescription}, Response Code: {verificationResponse.ResponseCode}");
-      
-                // }
-
-                // return verificationResponse;
+               
 
                 var accessToken = await interswitchAuthService.GetAccessTokensync();
-                Console.WriteLine("start 1111");
-
                 if (string.IsNullOrEmpty(accessToken))
                 {
                     throw new Exception("Couldn't get acces token");
                 }
                 // LIVE BASE URL: https://webpay.interswitchng.com
-                var options = new RestClientOptions($"https://qa.interswitchng.com/collections/api/v1/gettransaction.json?merchantcode=MX200816&transactionreference={transactionReference}&amount={amount}");
+                var options = new RestClientOptions($"https://qa.interswitchng.com/collections/api/v1/gettransaction.json?merchantcode=MX200816&transactionreference={transactionReference}&amount={amount.ToString()}");
                 var client = new RestClient(options);
 
                 var request = new RestRequest("");
 
                 request.AddHeader("Content-Type", "application/json");
                 request.AddHeader("Authorization", $"Bearer {accessToken}");
-                Console.WriteLine($"request====>{request}");
                 var response = await client.GetAsync(request);
                 Console.WriteLine($"response====>{response.Content}");
 

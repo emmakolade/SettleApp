@@ -11,6 +11,8 @@ namespace Settle_App.Models.DTO
         public string CustomerId { get; set; }
         public string CurrencyCode { get; set; }
         public string CustomerEmail { get; set; }
+        public Guid TransactionReference { get; set; }
+
     }
 
 

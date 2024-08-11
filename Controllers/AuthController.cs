@@ -43,7 +43,6 @@ namespace Settle_App.Controllers
 
             if (RegisterDto.Password != RegisterDto.ConfirmPassword)
                 return StatusCode(StatusCodes.Status400BadRequest, new EndpointResponse { Status = "Error", Message = "your password doesnt match" });
-            Console.WriteLine("passed 3");
 
             var identityUser = new SettleAppUser
             {
@@ -54,17 +53,14 @@ namespace Settle_App.Controllers
                 UserName = RegisterDto.Email,
                 NormalizedEmail = RegisterDto.Email
             };
-            Console.WriteLine("passed 4");
 
             Console.WriteLine(identityUser);
 
             var identityResult = await userManager.CreateAsync(identityUser, RegisterDto.Password);
-            Console.WriteLine("passed 5");
 
             if (identityResult.Succeeded)
 
             {
-                Console.WriteLine("passed 6");
 
                 await userManager.AddToRoleAsync(identityUser, SettleAppUserRoles.SettleAppUser);
 

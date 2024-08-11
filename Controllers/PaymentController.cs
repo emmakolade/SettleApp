@@ -75,18 +75,16 @@ namespace Settle_App.Controllers
                 //     return NotFound("User not found or transaction mismatch.");
                 // }
                 var userWallet = await walletRepository.GetWalletByIdAsync(user.Id);
-                Console.WriteLine($"userWallet====>{userWallet}");
 
                 var verifyPayment = await interswitchService.VerifyPaymentAsync(
                     transactionReference: paymentVerificationRequestDto.TransactionReference,
                     amount: paymentVerificationRequestDto.Amount
                 );
-                Console.WriteLine($"verifyPayment====>{verifyPayment}");
 
                 if (verifyPayment != null)
                 {
-                    await walletRepository.UpdateWalletBalanceAsync(userWallet,paymentVerificationRequestDto.Amount);
-                    return Ok(new { message = "Payment verified and wallet updated successfully." });
+                    await walletRepository.UpdateWalletBalanceAsync(userWallet, paymentVerificationRequestDto.Amount);
+                    return Ok(new { message = $"Payment verified and wallet updated with {paymentVerificationRequestDto.Amount} successfully." });
                 }
                 return BadRequest(new { message = "Payment verification failed." });
             }

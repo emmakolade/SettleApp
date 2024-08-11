@@ -24,7 +24,7 @@ namespace Settle_App.Repositories
         }
         public async Task UpdateWalletBalanceAsync(Wallet wallet, decimal amount)
         {
-            wallet.Balance += amount;
+            wallet.Balance += amount / 100;
             wallet.LastUpdated = DateTime.UtcNow;
             dbContext.Wallet.Update(wallet);
             await dbContext.SaveChangesAsync();            
