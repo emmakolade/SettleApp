@@ -23,12 +23,15 @@ namespace Settle_App.Helpers
     public class InterswitchReqDTO
     {
         public string AccessToken { get; set; }
-
-        // If you need to extract additional fields from the response, add them here
         public string TokenType { get; set; }
-        public long? ExpiresIn { get; set; }
-       
+        public int ExpiresIn { get; set; }
+        public string Scope { get; set; }
+        public string MerchantCode { get; set; }
+        public string ClientName { get; set; }
+        public string PayableId { get; set; }
+        public string Jti { get; set; }
+
     }
 
-    
+
 }

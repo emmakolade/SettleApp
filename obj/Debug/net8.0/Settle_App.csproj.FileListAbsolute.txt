@@ -143,3 +143,4 @@ C:\Users\Ak\Desktop\Settle_App\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.R
 C:\Users\Ak\Desktop\Settle_App\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll
 C:\Users\Ak\Desktop\Settle_App\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
 C:\Users\Ak\Desktop\Settle_App\bin\Debug\net8.0\RestSharp.dll
+C:\Users\Ak\Desktop\Settle_App\obj\Debug\net8.0\Settle_App.sourcelink.json

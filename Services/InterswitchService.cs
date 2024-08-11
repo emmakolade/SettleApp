@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.BearerToken;
 using Settle_App.Models.DTO;
+using Azure.Core;
+using System.Net.Http.Json;
 
 namespace Settle_App.Services
 {
@@ -26,30 +28,27 @@ namespace Settle_App.Services
             request.AddHeader("Authorization", $"Basic {credentials}");
             request.AddHeader("Content-Type", "application/x-www-form-urlencoded");
             var response = await client.PostAsync(request);
+
             if (!response.IsSuccessful)
             {
-                throw new Exception($"Could not retrieve access code! - {response.Content}");
+                throw new Exception($"Could not retrieve access code! - {response.ErrorMessage}");
             }
 
-            var accessTokenResponse = JsonSerializer.Deserialize<AccessTokenResponse>(response?.Content);
-
-            var interswitchReqDto = new InterswitchReqDTO
+            var _response = JsonSerializer.Deserialize<Dictionary<string, object>>(response.Content);
+            if (_response != null && _response.TryGetValue("access_token", out object value))
             {
-                AccessToken = accessTokenResponse?.AccessToken,
-                TokenType = accessTokenResponse?.TokenType,
-                ExpiresIn = accessTokenResponse?.ExpiresIn ?? 0 // Handle null case
-            };
+                return value.ToString();
+            }
 
-            return JsonSerializer.Serialize(interswitchReqDto);
-            // return new InterswitchReqDTO
+            // if (_response != null && _response.ContainsKey("access_token"))
             // {
-            //     AccessToken = accessTokenResponse.AccessToken,
-            //     TokenType = accessTokenResponse.TokenType,
-            //     // ExpiresIn accessTokenResponse.ExpiresIn
-            // };
-            // return response.Content;
+            //     return _response["access_token"].ToString();
+            // }
 
-            // return accessTokenResponse?.AccessToken;
+            throw new Exception("Access token not found in the response!");
+
+
+
 
         }
 
@@ -60,11 +59,13 @@ namespace Settle_App.Services
         private readonly IConfiguration configuration = configuration;
         // private readonly InterswitchAuthService interswitchAuthService = interswitchAuthService;
 
-        public async Task<PaymentInitializationResponseDto> InitializePaymentAsync( string amount, string customerId, string customerEmail)
+        public async Task<PaymentInitializationResponseDto> InitializePaymentAsync(string amount, string customerId, string customerEmail)
         {
             try
             {
                 var accessToken = await interswitchAuthService.GetAccessTokensync();
+                Console.WriteLine(accessToken);
+
                 if (string.IsNullOrEmpty(accessToken))
                     throw new Exception("Could not retrieve access token");
 
@@ -79,7 +80,7 @@ namespace Settle_App.Services
                     MerchantCode = "MX6072",
                     PayableCode = "9405967",
                     Amount = amount,
-                    RedirectUrl = "https://webpay-ui.k8.isw.la/demo-response",
+                    RedirectUrl = "https://expert.joinebo.app",
                     CustomerId = customerId,
                     CurrencyCode = "566",
                     CustomerEmail = customerEmail
@@ -88,11 +89,20 @@ namespace Settle_App.Services
                 var response = await client.PostAsync(request);
                 if (string.IsNullOrEmpty(response.Content))
                 {
-                    throw new Exception($"Payment could not be initialized: {response.ErrorMessage}");
+                    throw new Exception($"Payment could not be initialized: ");
                 }
-                var _response = JsonSerializer.Deserialize<PaymentInitializationResponseDto>(response.Content);
+                var _json = JsonSerializer.Deserialize<JsonElement>(response.Content);
+                var paymentResponse = new PaymentInitializationResponseDto
+                {
+                    PayableCode = _json.GetProperty("payableCode").GetString(),
+                    Amount = _json.GetProperty("amount").GetInt32().ToString(),
+                    TransactionReference = _json.GetProperty("reference").GetString(),
+                    RedirectUrl = _json.GetProperty("redirectUrl").GetString(),
+                    PaymentUrl = _json.GetProperty("paymentUrl").GetString(),
+                    CustomerId = _json.GetProperty("customerId").GetString()
 
-                return _response;
+                };
+                return paymentResponse;
 
             }
             catch (Exception Err)
@@ -105,42 +115,92 @@ namespace Settle_App.Services
         }
 
         //verify that payment was successful
-        public async Task<PaymentVerificationResponseDto> VerifyPaymentAsync( string transactionReference, decimal amount)
+        public async Task<PaymentVerificationResponseDto> VerifyPaymentAsync(string transactionReference, decimal amount)
         {
             try
-            {
-                var accessToken = await interswitchAuthService.GetAccessTokensync();
 
-                if(string.IsNullOrEmpty(accessToken)){
+            {
+                // var accessToken = await interswitchAuthService.GetAccessTokensync();
+                // Console.WriteLine("start 1111");
+
+                // if (string.IsNullOrEmpty(accessToken))
+                // {
+                //     throw new Exception("Couldn't get access token");
+                // }
+
+                // // Base URL for the API
+                // var options = new RestClientOptions("https://qa.interswitchng.com/collections/api/v1/gettransaction.json");
+                // var client = new RestClient(options);
+
+                // // Construct the verification URL with query parameters
+                // var verificationUrl = $"?merchantcode=MX200816&transactionreference={transactionReference}&amount={amount}";
+
+                // var request = new RestRequest(verificationUrl, Method.Get);
+
+                // // Add necessary headers
+                // request.AddHeader("Content-Type", "application/json");
+                // request.AddHeader("Authorization", $"Bearer {accessToken}");
+
+                // Console.WriteLine($"request====>{request}");
+
+                // // Make the GET request
+                // var response = await client.ExecuteAsync(request);
+                // Console.WriteLine($"response====>{response.Content}");
+
+                // // Check if the response has content
+                // if (string.IsNullOrEmpty(response.Content))
+                // {
+                //     throw new Exception($"No content was returned from the server: {response.Content}");
+                // }
+
+                // // Deserialize the response content to your DTO
+                // var verificationResponse = JsonSerializer.Deserialize<PaymentVerificationResponseDto>(response.Content);
+
+                // if (verificationResponse.Amount == 0 || verificationResponse.ResponseCode  == "Z25"){
+                //     throw new Exception($"Payment verification failed: {verificationResponse.ResponseDescription}, Response Code: {verificationResponse.ResponseCode}");
+      
+                // }
+
+                // return verificationResponse;
+
+                var accessToken = await interswitchAuthService.GetAccessTokensync();
+                Console.WriteLine("start 1111");
+
+                if (string.IsNullOrEmpty(accessToken))
+                {
                     throw new Exception("Couldn't get acces token");
                 }
                 // LIVE BASE URL: https://webpay.interswitchng.com
-                var options = new RestClientOptions("https://qa.interswitchng.com/collections/api/v1/gettransaction.json");
+                var options = new RestClientOptions($"https://qa.interswitchng.com/collections/api/v1/gettransaction.json?merchantcode=MX200816&transactionreference={transactionReference}&amount={amount}");
                 var client = new RestClient(options);
-
-                var verificationUrl = $"?merchantcode=MX200816&transactionreference={transactionReference}&amount={amount}";
 
                 var request = new RestRequest("");
 
                 request.AddHeader("Content-Type", "application/json");
                 request.AddHeader("Authorization", $"Bearer {accessToken}");
-                var response = await client.PostAsync(request);
+                Console.WriteLine($"request====>{request}");
+                var response = await client.GetAsync(request);
+                Console.WriteLine($"response====>{response.Content}");
 
                 if (string.IsNullOrEmpty(response.Content))
                 {
-                    throw new Exception($"No content was returned from the server: {response.StatusCode}");
+                    throw new Exception($"No content was returned from the server: {response.Content}");
                 }
 
                 var verificationResponse = JsonSerializer.Deserialize<PaymentVerificationResponseDto>(response.Content);
 
+                if (verificationResponse.Amount == 0 || verificationResponse.ResponseCode  == "Z25"){
+                    throw new Exception($"Payment verification failed: {verificationResponse.ResponseDescription}, Response Code: {verificationResponse.ResponseCode}");
+      
+                }
                 return verificationResponse;
 
 
             }
             catch (Exception err)
             {
-                
-                throw new Exception($"An error occurred while verifying the payment: {err.Message}");
+
+                throw new Exception($"{err.Message}");
             }
 
         }

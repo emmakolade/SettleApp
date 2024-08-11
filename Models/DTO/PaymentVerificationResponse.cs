@@ -9,6 +9,8 @@ namespace Settle_App.Models.DTO
         public decimal Amount { get; set; }
         public string MerchantCode { get; set; }
         public string PaymentDate { get; set; }
+        public string ResponseCode  { get; set; }
+        public string ResponseDescription  { get; set; }
         // Add other fields if necessary
     }
 

@@ -27,17 +27,23 @@ namespace Settle_App.Controllers
         {
             //check if user exists 
             var userExists = await userManager.FindByEmailAsync(RegisterDto.Email);
-            Console.WriteLine(userExists?.UserName);
+
+            //TODO: implement repository for retrieving user by username
+            if (userExists != null)
+            {
+                if (userExists?.SettleAppUserName == RegisterDto.SettleAppUserName)
+                    return StatusCode(StatusCodes.Status400BadRequest, new EndpointResponse { Status = "Error", Message = "username already exists!" });
+
+            }
 
             if (userExists?.Email == RegisterDto.Email)
                 return StatusCode(StatusCodes.Status400BadRequest, new EndpointResponse { Status = "Error", Message = "email already exists!" });
 
-            if (userExists?.SettleAppUserName == RegisterDto.SettleAppUserName)
-                return StatusCode(StatusCodes.Status400BadRequest, new EndpointResponse { Status = "Error", Message = "username already exists!" });
 
 
             if (RegisterDto.Password != RegisterDto.ConfirmPassword)
                 return StatusCode(StatusCodes.Status400BadRequest, new EndpointResponse { Status = "Error", Message = "your password doesnt match" });
+            Console.WriteLine("passed 3");
 
             var identityUser = new SettleAppUser
             {
@@ -45,11 +51,21 @@ namespace Settle_App.Controllers
                 SettleAppUserName = RegisterDto.SettleAppUserName,
                 PhoneNumber = RegisterDto.PhoneNumber,
                 Email = RegisterDto.Email,
+                UserName = RegisterDto.Email,
+                NormalizedEmail = RegisterDto.Email
             };
+            Console.WriteLine("passed 4");
+
+            Console.WriteLine(identityUser);
 
             var identityResult = await userManager.CreateAsync(identityUser, RegisterDto.Password);
+            Console.WriteLine("passed 5");
+
             if (identityResult.Succeeded)
+
             {
+                Console.WriteLine("passed 6");
+
                 await userManager.AddToRoleAsync(identityUser, SettleAppUserRoles.SettleAppUser);
 
                 await walletRepository.CreateWalletAsync(identityUser);
@@ -79,9 +95,8 @@ namespace Settle_App.Controllers
                     {
                         var accessToken = jWTRepository.GenerateAccessToken(user, getUserRole?.ToString());
                         var refreshToken = jWTRepository.GenerateRefreshToken();
-                        // Save refresh token to the database (or wherever you store it)
                         user.RefreshToken = refreshToken;
-                        user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7); // Refresh token expiry time, e.g., 7 days
+                        user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
                         await userManager.UpdateAsync(user);
 
                         var res = new AccessTokenResponse

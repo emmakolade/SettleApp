@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Settle_App.Helpers;
@@ -21,23 +22,28 @@ namespace Settle_App.Controllers
 
         [HttpPost]
         [Route("initialize")]
+        // [Authorize]
         public async Task<IActionResult> InitializePayment([FromBody] PaymentInitializationRequestDto paymentInitializationRequest)
         {
             try
             {
-                //  var userId = User.Identity?.Name
-                // var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Safest way to get user ID
-                var userEmail = User.FindFirstValue(ClaimTypes.Email); // Get the user's email from claims
-                var user = await userManager.FindByEmailAsync(ClaimTypes.Email);
-                if (user == null)
-                {
-                    return NotFound(new EndpointResponse { Status = "Error", Message = "User not found for this transaction" });
-                }
+                // var userId = User.Identity?.Name;
+                // Console.WriteLine(userId);
+                // var userId2 = User.FindFirstValue(ClaimTypes.NameIdentifier); // Safest way to get user ID
+                // Console.WriteLine(userId2);
+                // var userEmail = User.FindFirstValue(ClaimTypes.Email); // Get the user's email from claims
+                var user = await userManager.FindByEmailAsync(paymentInitializationRequest.CustomerEmail);
+                Console.WriteLine($"email=======>>>{user}");
+                // if (user == null)
+                // {
+                //     return NotFound(new EndpointResponse { Status = "Error", Message = "User not found for this transaction" });
+                // }
                 var _response = await interswitchService.InitializePaymentAsync(
                     amount: paymentInitializationRequest.Amount,
                     customerId: user.Id,
                     customerEmail: user.Email
                 );
+                Console.WriteLine($"_response=======>>>{_response}");
 
                 //update users transaction refrenece
                 user.TransactionReference = _response.TransactionReference;
@@ -56,26 +62,30 @@ namespace Settle_App.Controllers
 
         }
 
-        [HttpPost]
+        [HttpGet]
         [Route("verify/fund-wallet")]
-        public async Task<IActionResult> VerifyPayment([FromBody] string transactionReference, decimal amount)
+        // [Authorize]
+        public async Task<IActionResult> VerifyPayment([FromQuery] PaymentVerificationRequestDto paymentVerificationRequestDto)
         {
             try
             {
-                var user = await userManager.FindByEmailAsync(ClaimTypes.Email);
-                if (user == null || user.TransactionReference != transactionReference)
-                {
-                    return NotFound("User not found or transaction mismatch.");
-                }
+                var user = await userManager.FindByEmailAsync("user3@example.com");
+                // if (user == null || user.TransactionReference != paymentVerificationRequestDto.TransactionReference)
+                // {
+                //     return NotFound("User not found or transaction mismatch.");
+                // }
                 var userWallet = await walletRepository.GetWalletByIdAsync(user.Id);
+                Console.WriteLine($"userWallet====>{userWallet}");
 
                 var verifyPayment = await interswitchService.VerifyPaymentAsync(
-                    transactionReference: transactionReference,
-                    amount: amount
+                    transactionReference: paymentVerificationRequestDto.TransactionReference,
+                    amount: paymentVerificationRequestDto.Amount
                 );
+                Console.WriteLine($"verifyPayment====>{verifyPayment}");
+
                 if (verifyPayment != null)
                 {
-                    await walletRepository.UpdateWalletBalanceAsync(userWallet, amount);
+                    await walletRepository.UpdateWalletBalanceAsync(userWallet,paymentVerificationRequestDto.Amount);
                     return Ok(new { message = "Payment verified and wallet updated successfully." });
                 }
                 return BadRequest(new { message = "Payment verification failed." });

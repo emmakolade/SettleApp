@@ -2,10 +2,10 @@
 
 #nullable disable
 
-namespace Settle_App.Migrations.SettleAppDB
+namespace Settle_App.Migrations
 {
     /// <inheritdoc />
-    public partial class allterUserModel2 : Migration
+    public partial class allterUserModel3 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

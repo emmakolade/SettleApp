@@ -9,11 +9,11 @@ using Settle_App.Data;
 
 #nullable disable
 
-namespace Settle_App.Migrations.SettleAppDB
+namespace Settle_App.Migrations
 {
     [DbContext(typeof(SettleAppDBContext))]
-    [Migration("20240810211521_allterUserModel2")]
-    partial class allterUserModel2
+    [Migration("20240810220233_allterUserModel3")]
+    partial class allterUserModel3
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
