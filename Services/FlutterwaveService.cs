@@ -19,7 +19,7 @@ namespace Settle_App.Services
     {
         private readonly IConfiguration configuration = configuration;
 
-        public async Task<FlutterwavePaymentInitializationResponseDto> InitializePaymentAsync(string amount, string customerId, string customerEmail)
+        public async Task<FlutterwavePaymentInitializationResponseDto> InitializePaymentAsync(string amount, string customerEmail)
         {
             try
             {
@@ -30,30 +30,25 @@ namespace Settle_App.Services
                 request.AddHeader("Content-Type", "application/json");
                 var PaybillRequestDto = new FlutterwavePaybillRequestDto
                 {
-                    MerchantCode = "MX200816",
-                    PayableCode = "Default_Payable_MX200816",
+                    TransactionReference = Guid.NewGuid(),
                     Amount = amount,
-                    RedirectUrl = "https://webpay-ui.k8.isw.la/demo-response",
-                    CustomerId = customerId,
-                    CurrencyCode = "566",
-                    CustomerEmail = customerEmail,
-                    TransactionReference = Guid.NewGuid()
+                    RedirectUrl = "https://bing.com",
+                    CurrencyCode = "NGN",
+                    Customer = new FlutterwaveCustomerDto { Email = customerEmail },
+                    Customizations = new FlutterwaveCustomizationsDto { Title = "Settle App Wallet Top-Up" },
+                    Configurations = new FlutterwaveConfigurationsDto { MaxRetryAttempt = 5, SessionDuration = 10 }
                 };
                 request.AddJsonBody(PaybillRequestDto);
                 var response = await client.PostAsync(request);
                 if (string.IsNullOrEmpty(response.Content))
                 {
-                    throw new Exception($"Payment could not be initialized: ");
+                    throw new Exception($"payment could not be initialized: ");
                 }
                 var _json = JsonSerializer.Deserialize<JsonElement>(response.Content);
-                var paymentResponse = new InterswitchPaymentInitializationResponseDto
+                var paymentResponse = new FlutterwavePaymentInitializationResponseDto
                 {
-                    PayableCode = _json.GetProperty("payableCode").GetString(),
-                    Amount = _json.GetProperty("amount").GetInt32().ToString(),
-                    TransactionReference = _json.GetProperty("transactionReference").GetString(),
-                    RedirectUrl = _json.GetProperty("redirectUrl").GetString(),
-                    PaymentUrl = _json.GetProperty("paymentUrl").GetString(),
-                    CustomerId = _json.GetProperty("customerId").GetString()
+
+                    PaymentUrl = _json.GetProperty("data").GetProperty("link").GetString(),
 
                 };
                 return paymentResponse;
@@ -62,33 +57,26 @@ namespace Settle_App.Services
             catch (Exception Err)
             {
 
-                throw new Exception($"An error occurred while initializing the payment: {Err.Message}");
+                throw new Exception($"payment initialization failed: {Err.Message}");
             }
 
 
         }
 
         //verify that payment was successful
-        public async Task<InterswitchPaymentVerificationResponseDto> VerifyPaymentAsync(string transactionReference, decimal amount)
+        public async Task<FlutterwavePaymentVerificationResponseDto> VerifyPaymentAsync(string transactionReference, decimal amount)
         {
             try
             // MX6072
             {
-
-
-                var accessToken = await interswitchAuthService.GetAccessTokensync();
-                if (string.IsNullOrEmpty(accessToken))
-                {
-                    throw new Exception("Couldn't get acces token");
-                }
                 // LIVE BASE URL: https://webpay.interswitchng.com
-                var options = new RestClientOptions($"https://qa.interswitchng.com/collections/api/v1/gettransaction.json?merchantcode=MX200816&transactionreference={transactionReference}&amount={amount.ToString()}");
+                var options = new RestClientOptions($"https://api.flutterwave.com/v3/transactions/?id={transactionReference}/verify");
                 var client = new RestClient(options);
 
                 var request = new RestRequest("");
 
                 request.AddHeader("Content-Type", "application/json");
-                request.AddHeader("Authorization", $"Bearer {accessToken}");
+                request.AddHeader("Authorization", $"Bearer {"SECRETKEY"}");
                 var response = await client.GetAsync(request);
                 Console.WriteLine($"response====>{response.Content}");
 
@@ -97,15 +85,17 @@ namespace Settle_App.Services
                     throw new Exception($"No content was returned from the server: {response.Content}");
                 }
 
-                var verificationResponse = JsonSerializer.Deserialize<InterswitchPaymentVerificationResponseDto>(response.Content);
+                var verificationResponse = JsonSerializer.Deserialize<FlutterwavePaymentVerificationResponseDto>(response.Content);
 
-                if (verificationResponse.Amount == 0 || verificationResponse.ResponseCode == "Z25")
+                if (verificationResponse.Amount == amount && verificationResponse.CurrencyCode == "NGN" && verificationResponse.Status == "successful")
                 {
-                    throw new Exception($"Payment verification failed: {verificationResponse.ResponseDescription}, Response Code: {verificationResponse.ResponseCode}");
+                    return verificationResponse;
 
                 }
-                return verificationResponse;
-
+                else
+                {
+                    return new FlutterwavePaymentVerificationResponseDto { Status = "payment verification not successful" };
+                }
 
             }
             catch (Exception err)

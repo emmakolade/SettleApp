@@ -3,7 +3,7 @@ using Settle_App.Helpers;
 
 namespace Settle_App.Models.DTO
 {
-    public class InterswitchPaymentVerificationRequestDto
+    public class PaymentVerificationRequestDto
     {
         public decimal Amount { get; set; }
         public string TransactionReference { get; set; }
