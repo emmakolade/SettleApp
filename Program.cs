@@ -88,6 +88,7 @@ builder.Services.AddDbContext<SettleAppDBContext>(options => options.UseSqlServe
 // Add Scoped Repository
 builder.Services.AddScoped<IJWTRepository, JWTRepository>();
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<InterswitchService>();
 builder.Services.AddScoped<InterswitchAuthService>();
 // Add Singleton Helpers

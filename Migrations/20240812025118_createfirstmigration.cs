@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Settle_App.Migrations
 {
     /// <inheritdoc />
-    public partial class allterUserModel2 : Migration
+    public partial class createfirstmigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -87,6 +87,24 @@ namespace Settle_App.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Register", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Transactions",
+                schema: "SettleApp",
+                columns: table => new
+                {
+                    TransactionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OwnerId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TransactionTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    TransactionStatus = table.Column<int>(type: "int", nullable: false),
+                    TransactionType = table.Column<int>(type: "int", nullable: false),
+                    PaymentGateway = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Transactions", x => x.TransactionId);
                 });
 
             migrationBuilder.CreateTable(
@@ -306,6 +324,10 @@ namespace Settle_App.Migrations
 
             migrationBuilder.DropTable(
                 name: "Register",
+                schema: "SettleApp");
+
+            migrationBuilder.DropTable(
+                name: "Transactions",
                 schema: "SettleApp");
 
             migrationBuilder.DropTable(

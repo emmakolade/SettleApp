@@ -15,68 +15,20 @@ namespace Settle_App.Services
 {
 
 
-
-    public class InterswitchAuthService()
-    {
-        public async Task<string> GetAccessTokensync()
-        
-        {
-            var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{"IKIA920656DA4CDDF5FBEA6E470F503ACBE3326F89EA"}:{"uJ36GtDU5uQT3hy"}"));
-            var options = new RestClientOptions("https://apps.qa.interswitchng.com/passport/oauth/token?grant_type=client_credentials");
-            var client = new RestClient(options);
-            var request = new RestRequest("");
-            request.AddHeader("accept", "application/json");
-            request.AddHeader("Authorization", $"Basic {credentials}");
-            request.AddHeader("Content-Type", "application/x-www-form-urlencoded");
-            var response = await client.PostAsync(request);
-
-            if (!response.IsSuccessful)
-            {
-                throw new Exception($"Could not retrieve access code! - {response.ErrorMessage}");
-            }
-
-            var _response = JsonSerializer.Deserialize<Dictionary<string, object>>(response.Content);
-            if (_response != null && _response.TryGetValue("access_token", out object value))
-            {
-                return value.ToString();
-            }
-
-            // if (_response != null && _response.ContainsKey("access_token"))
-            // {
-            //     return _response["access_token"].ToString();
-            // }
-
-            throw new Exception("Access token not found in the response!");
-
-
-
-
-        }
-
-
-    }
-    public class InterswitchService(IConfiguration configuration, InterswitchAuthService interswitchAuthService)
+    public class FlutterWaveService(IConfiguration configuration)
     {
         private readonly IConfiguration configuration = configuration;
-        // private readonly InterswitchAuthService interswitchAuthService = interswitchAuthService;
 
-        public async Task<InterswitchPaymentInitializationResponseDto> InitializePaymentAsync(string amount, string customerId, string customerEmail)
+        public async Task<FlutterwavePaymentInitializationResponseDto> InitializePaymentAsync(string amount, string customerId, string customerEmail)
         {
             try
             {
-                var accessToken = await interswitchAuthService.GetAccessTokensync();
-                Console.WriteLine(accessToken);
-
-                if (string.IsNullOrEmpty(accessToken))
-                    throw new Exception("Could not retrieve access token");
-
-
-                var options = new RestClientOptions("https://qa.interswitchng.com/paymentgateway/api/v1/paybill");
+                var options = new RestClientOptions("https://api.flutterwave.com/v3/payments");
                 var client = new RestClient(options);
                 var request = new RestRequest("");
-                request.AddHeader("accept", "application/json");
-                request.AddHeader("Authorization", $"Bearer {accessToken}");
-                var PaybillRequestDto = new InterswitchPaybillRequestDto
+                request.AddHeader("Authorization", $"Bearer {"SECRETKEY"}");
+                request.AddHeader("Content-Type", "application/json");
+                var PaybillRequestDto = new FlutterwavePaybillRequestDto
                 {
                     MerchantCode = "MX200816",
                     PayableCode = "Default_Payable_MX200816",
@@ -120,9 +72,9 @@ namespace Settle_App.Services
         public async Task<InterswitchPaymentVerificationResponseDto> VerifyPaymentAsync(string transactionReference, decimal amount)
         {
             try
-// MX6072
+            // MX6072
             {
-               
+
 
                 var accessToken = await interswitchAuthService.GetAccessTokensync();
                 if (string.IsNullOrEmpty(accessToken))
@@ -147,9 +99,10 @@ namespace Settle_App.Services
 
                 var verificationResponse = JsonSerializer.Deserialize<InterswitchPaymentVerificationResponseDto>(response.Content);
 
-                if (verificationResponse.Amount == 0 || verificationResponse.ResponseCode  == "Z25"){
+                if (verificationResponse.Amount == 0 || verificationResponse.ResponseCode == "Z25")
+                {
                     throw new Exception($"Payment verification failed: {verificationResponse.ResponseDescription}, Response Code: {verificationResponse.ResponseCode}");
-      
+
                 }
                 return verificationResponse;
 

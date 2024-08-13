@@ -13,17 +13,18 @@ namespace Settle_App.Controllers
     [ApiController]
     [Route("payments/")]
 
-    public class PaymentController(InterswitchService interswitchService, InterswitchAuthService interswitchAuthService, UserManager<SettleAppUser> userManager, IWalletRepository walletRepository) : ControllerBase
+    public class PaymentController(InterswitchService interswitchService, InterswitchAuthService interswitchAuthService, UserManager<SettleAppUser> userManager, IWalletRepository walletRepository, ITransactionRepository transactionRepository) : ControllerBase
     {
         private readonly InterswitchService interswitchService = interswitchService;
         private readonly InterswitchAuthService interswitchAuthService = interswitchAuthService;
         private readonly UserManager<SettleAppUser> userManager = userManager;
         private readonly IWalletRepository walletRepository = walletRepository;
+        private readonly ITransactionRepository transactionRepository = transactionRepository;
 
         [HttpPost]
         [Route("initialize")]
         // [Authorize]
-        public async Task<IActionResult> InitializePayment([FromBody] PaymentInitializationRequestDto paymentInitializationRequest)
+        public async Task<IActionResult> InitializePayment([FromBody] InterswitchPaymentInitializationRequestDto paymentInitializationRequest)
         {
             try
             {
@@ -65,26 +66,29 @@ namespace Settle_App.Controllers
         [HttpGet]
         [Route("verify/fund-wallet")]
         // [Authorize]
-        public async Task<IActionResult> VerifyPayment([FromQuery] PaymentVerificationRequestDto paymentVerificationRequestDto)
+        public async Task<IActionResult> VerifyPayment([FromQuery] InterswitchPaymentVerificationRequestDto InterswitchPaymentVerificationRequestDto)
         {
             try
             {
                 var user = await userManager.FindByEmailAsync("user3@example.com");
-                // if (user == null || user.TransactionReference != paymentVerificationRequestDto.TransactionReference)
+                // if (user == null || user.TransactionReference != InterswitchPaymentVerificationRequestDto.TransactionReference)
                 // {
                 //     return NotFound("User not found or transaction mismatch.");
                 // }
                 var userWallet = await walletRepository.GetWalletByIdAsync(user.Id);
 
                 var verifyPayment = await interswitchService.VerifyPaymentAsync(
-                    transactionReference: paymentVerificationRequestDto.TransactionReference,
-                    amount: paymentVerificationRequestDto.Amount
+                    transactionReference: InterswitchPaymentVerificationRequestDto.TransactionReference,
+                    amount: InterswitchPaymentVerificationRequestDto.Amount
                 );
 
                 if (verifyPayment != null)
                 {
-                    await walletRepository.UpdateWalletBalanceAsync(userWallet, paymentVerificationRequestDto.Amount);
-                    return Ok(new { message = $"Payment verified and wallet updated with {paymentVerificationRequestDto.Amount} successfully." });
+                    await walletRepository.UpdateWalletBalanceAsync(userWallet, InterswitchPaymentVerificationRequestDto.Amount);
+                    await transactionRepository.CreateTransactionAsync(settleAppUser: user, amount: InterswitchPaymentVerificationRequestDto.Amount,
+                                                                paymentGateway: InterswitchPaymentVerificationRequestDto.PaymentGateway, transactionStatus: TransactionStatus.Completed, transactionType: TransactionType.WalletFunding);
+
+                    return Ok(new { message = $"Payment verified and wallet updated with {InterswitchPaymentVerificationRequestDto.Amount} successfully." });
                 }
                 return BadRequest(new { message = "Payment verification failed." });
             }

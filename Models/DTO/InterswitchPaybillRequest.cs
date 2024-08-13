@@ -2,7 +2,7 @@
 
 namespace Settle_App.Models.DTO
 {
-    public class PaybillRequestDto
+    public class InterswitchPaybillRequestDto
     {
         public string MerchantCode { get; set; }
         public string PayableCode { get; set; }

@@ -2,7 +2,7 @@
 
 namespace Settle_App.Models.DTO
 {
-     public class PaymentVerificationResponseDto
+     public class InterswitchPaymentVerificationResponseDto
     {
         public string TransactionReference { get; set; }
         public string Status { get; set; }

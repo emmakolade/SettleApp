@@ -12,8 +12,8 @@ using Settle_App.Data;
 namespace Settle_App.Migrations
 {
     [DbContext(typeof(SettleAppDBContext))]
-    [Migration("20240810215156_allterUserModel2")]
-    partial class allterUserModel2
+    [Migration("20240812025118_createfirstmigration")]
+    partial class createfirstmigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -299,6 +299,35 @@ namespace Settle_App.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", "SettleApp");
+                });
+
+            modelBuilder.Entity("Settle_App.Models.Domain.Transaction", b =>
+                {
+                    b.Property<Guid>("TransactionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("OwnerId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PaymentGateway")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TransactionStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TransactionTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TransactionType")
+                        .HasColumnType("int");
+
+                    b.HasKey("TransactionId");
+
+                    b.ToTable("Transactions", "SettleApp");
                 });
 
             modelBuilder.Entity("Settle_App.Models.Domain.Wallet", b =>

@@ -2,7 +2,7 @@
 
 namespace Settle_App.Models.DTO
 {
-    public class PaymentInitializationRequestDto
+    public class InterswitchPaymentInitializationRequestDto
     {
         public string Amount { get; set; }
         // public string RedirectUrl { get; set; }

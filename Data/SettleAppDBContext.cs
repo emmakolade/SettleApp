@@ -10,6 +10,7 @@ namespace Settle_App.Data
     {
         public DbSet<Register> Register { get; set; }
         public DbSet<Wallet> Wallet { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
