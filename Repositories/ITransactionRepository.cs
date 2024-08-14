@@ -10,7 +10,7 @@ namespace Settle_App.Repositories
     public interface ITransactionRepository
     {
 
-        Task<Transaction> CreateTransactionAsync(SettleAppUser settleAppUser, decimal amount, 
+        Task<Transaction> CreateTransactionAsync(SettleAppUser settleAppUser, decimal amount, Guid transactionReference,
                                                             TransactionStatus transactionStatus, TransactionType transactionType, PaymentGateway paymentGateway);
 
         Task UpdateTransactionAsync(Transaction transaction, decimal amount, TransactionStatus transactionStatus, TransactionType transactionType, PaymentGateway paymentGateway, DateTime TransactionTime);

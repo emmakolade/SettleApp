@@ -16,14 +16,19 @@ namespace Settle_App.Data
         {
             base.OnModelCreating(builder);
             builder.HasDefaultSchema("SettleApp");
-            
+
             builder.Entity<Register>()
                 .Property(p => p.PhoneNumber)
                 .HasMaxLength(15);
-            
+
             builder.Entity<Wallet>()
-            .Property(w=>w.Balance)
-            .HasColumnType("decimal(18.2)");
+            .Property(w => w.Balance)
+            .HasPrecision(18, 2);
+
+
+            builder.Entity<Transaction>()
+            .Property(t => t.Amount)
+            .HasPrecision(18, 2);
 
         }
     }
@@ -34,7 +39,7 @@ namespace Settle_App.Data
 //     public class SettleAppDBContext(DbContextOptions<SettleAppDBContext> dbContextOptions) : DbContext(dbContextOptions)
 //     {
 //         public DbSet<Wallet> Wallet { get; set; }
-        
-       
+
+
 //     }
 // }

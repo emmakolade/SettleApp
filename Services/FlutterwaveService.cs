@@ -19,27 +19,35 @@ namespace Settle_App.Services
     {
         private readonly IConfiguration configuration = configuration;
 
-        public async Task<FlutterwavePaymentInitializationResponseDto> InitializePaymentAsync(string amount, string customerEmail)
+        public async Task<FlutterwavePaymentInitializationResponseDto> InitializePaymentAsync(string amount, string customerEmail, Guid transactionReference )
         {
             try
             {
                 var options = new RestClientOptions("https://api.flutterwave.com/v3/payments");
+                Console.WriteLine($"options======>>>>>{options}");
                 var client = new RestClient(options);
                 var request = new RestRequest("");
-                request.AddHeader("Authorization", $"Bearer {"SECRETKEY"}");
+                request.AddHeader("Authorization", $"Bearer FLWSECK_TEST-750ef95bb6081c01e8b2290660911c0f-X");
                 request.AddHeader("Content-Type", "application/json");
                 var PaybillRequestDto = new FlutterwavePaybillRequestDto
                 {
-                    TransactionReference = Guid.NewGuid(),
+                    TransactionReference = transactionReference,
                     Amount = amount,
                     RedirectUrl = "https://bing.com",
                     CurrencyCode = "NGN",
-                    Customer = new FlutterwaveCustomerDto { Email = customerEmail },
+                    Customer = new FlutterwaveCustomerDto
+                    {
+                        Email = customerEmail,
+                        // Name = "emmakolade",
+                        // PhoneNumber = "08144003440"
+                    },
                     Customizations = new FlutterwaveCustomizationsDto { Title = "Settle App Wallet Top-Up" },
                     Configurations = new FlutterwaveConfigurationsDto { MaxRetryAttempt = 5, SessionDuration = 10 }
                 };
                 request.AddJsonBody(PaybillRequestDto);
+                Console.WriteLine($"request======>>>>>{request}");
                 var response = await client.PostAsync(request);
+                Console.WriteLine($"response======>>>>>{response.Content}");
                 if (string.IsNullOrEmpty(response.Content))
                 {
                     throw new Exception($"payment could not be initialized: ");
@@ -70,13 +78,13 @@ namespace Settle_App.Services
             // MX6072
             {
                 // LIVE BASE URL: https://webpay.interswitchng.com
-                var options = new RestClientOptions($"https://api.flutterwave.com/v3/transactions/?id={transactionReference}/verify");
+                var options = new RestClientOptions($"https://api.flutterwave.com/v3/transactions/?transaction_id={transactionReference}/verify");
                 var client = new RestClient(options);
 
                 var request = new RestRequest("");
 
                 request.AddHeader("Content-Type", "application/json");
-                request.AddHeader("Authorization", $"Bearer {"SECRETKEY"}");
+                request.AddHeader("Authorization", $"Bearer FLWSECK_TEST-750ef95bb6081c01e8b2290660911c0f-X");
                 var response = await client.GetAsync(request);
                 Console.WriteLine($"response====>{response.Content}");
 

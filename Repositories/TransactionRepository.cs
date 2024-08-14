@@ -17,11 +17,11 @@ namespace Settle_App.Repositories
     {
         private readonly SettleAppDBContext dbContext = dbContext;
 
-        public async Task<Transaction> CreateTransactionAsync(SettleAppUser settleAppUser, decimal amount, TransactionStatus transactionStatus, TransactionType transactionType, PaymentGateway paymentGateway)
+        public async Task<Transaction> CreateTransactionAsync(SettleAppUser settleAppUser, decimal amount, Guid transactionReference, TransactionStatus transactionStatus, TransactionType transactionType, PaymentGateway paymentGateway)
         {
             var transaction = new Transaction
             {
-                TransactionId = Guid.NewGuid(),
+                TransactionId = transactionReference,
                 OwnerId = settleAppUser.Id,
                 Amount = amount,
                 PaymentGateway = paymentGateway,

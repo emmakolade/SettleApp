@@ -91,6 +91,7 @@ builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<InterswitchService>();
 builder.Services.AddScoped<InterswitchAuthService>();
+builder.Services.AddScoped<FlutterWaveService>();
 // Add Singleton Helpers
 builder.Services.AddSingleton<StringHelper>();
 
