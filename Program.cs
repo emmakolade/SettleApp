@@ -92,6 +92,7 @@ builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<InterswitchService>();
 builder.Services.AddScoped<InterswitchAuthService>();
 builder.Services.AddScoped<FlutterWaveService>();
+builder.Services.AddScoped<PaystackService>();
 // Add Singleton Helpers
 builder.Services.AddSingleton<StringHelper>();
 

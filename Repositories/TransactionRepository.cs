@@ -34,7 +34,7 @@ namespace Settle_App.Repositories
             await dbContext.SaveChangesAsync();
             return transaction;
         }
-        public async Task UpdateTransactionAsync(Transaction transaction, decimal amount, TransactionStatus transactionStatus, TransactionType transactionType, PaymentGateway paymentGateway, DateTime TransactionTime)
+        public async Task UpdateTransactionAsync(Transaction transaction, decimal amount, TransactionStatus transactionStatus, TransactionType transactionType, PaymentGateway paymentGateway, DateTime transactionTime)
 
 
         {
@@ -43,7 +43,7 @@ namespace Settle_App.Repositories
             transaction.TransactionStatus = transactionStatus;
             transaction.TransactionType = transactionType;
             transaction.PaymentGateway = paymentGateway;
-            transaction.TransactionTime = DateTime.UtcNow;
+            transaction.TransactionTime = transactionTime;
             dbContext.Transactions.Update(transaction);
             await dbContext.SaveChangesAsync();
 

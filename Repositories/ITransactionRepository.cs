@@ -13,7 +13,7 @@ namespace Settle_App.Repositories
         Task<Transaction> CreateTransactionAsync(SettleAppUser settleAppUser, decimal amount, Guid transactionReference,
                                                             TransactionStatus transactionStatus, TransactionType transactionType, PaymentGateway paymentGateway);
 
-        Task UpdateTransactionAsync(Transaction transaction, decimal amount, TransactionStatus transactionStatus, TransactionType transactionType, PaymentGateway paymentGateway, DateTime TransactionTime);
+        Task UpdateTransactionAsync(Transaction transaction, decimal amount, TransactionStatus transactionStatus, TransactionType transactionType, PaymentGateway paymentGateway, DateTime transactionTime);
 
 
         Task<Transaction> GetTransactionByIdAsync(Guid TransactionReference);

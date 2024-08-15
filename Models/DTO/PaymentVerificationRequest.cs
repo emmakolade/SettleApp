@@ -7,6 +7,7 @@ namespace Settle_App.Models.DTO
     {
         public decimal Amount { get; set; }
         public string TransactionReference { get; set; }
+        public Guid SystemTransactionReference { get; set; }
         
         [EnumDataType(typeof(PaymentGateway))]
         public PaymentGateway PaymentGateway { get; set; } = PaymentGateway.None;

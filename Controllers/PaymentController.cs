@@ -14,11 +14,13 @@ namespace Settle_App.Controllers
     [ApiController]
     [Route("payments/")]
 
-    public class PaymentController(InterswitchService interswitchService, InterswitchAuthService interswitchAuthService, FlutterWaveService flutterWaveService, UserManager<SettleAppUser> userManager, IWalletRepository walletRepository, ITransactionRepository transactionRepository) : ControllerBase
+    public class PaymentController(InterswitchService interswitchService, InterswitchAuthService interswitchAuthService, FlutterWaveService flutterWaveService, PaystackService paystackService,
+                                                            UserManager<SettleAppUser> userManager, IWalletRepository walletRepository, ITransactionRepository transactionRepository) : ControllerBase
     {
         private readonly InterswitchService interswitchService = interswitchService;
         private readonly InterswitchAuthService interswitchAuthService = interswitchAuthService;
         private readonly FlutterWaveService flutterWaveService = flutterWaveService;
+        private readonly PaystackService paystackService = paystackService;
         private readonly UserManager<SettleAppUser> userManager = userManager;
         private readonly IWalletRepository walletRepository = walletRepository;
         private readonly ITransactionRepository transactionRepository = transactionRepository;
@@ -26,7 +28,7 @@ namespace Settle_App.Controllers
         [HttpPost]
         [Route("initialize")]
         // [Authorize]
-        public async Task<IActionResult> InitializePayment([FromBody] PaymentInitializationRequestDto paymentInitializationRequest, PaymentVerificationRequestDto paymentVerificationRequestDto)
+        public async Task<IActionResult> InitializePayment([FromBody] PaymentInitializationRequestDto paymentInitializationRequest)
         {
             try
             {
@@ -37,6 +39,7 @@ namespace Settle_App.Controllers
                 // var userEmail = User.FindFirstValue(ClaimTypes.Email); // Get the user's email from claims
 
                 var user = await userManager.FindByEmailAsync(paymentInitializationRequest.CustomerEmail);
+                var transactionAmount = decimal.Parse(paymentInitializationRequest.Amount);
                 var transactionReference = Guid.NewGuid();
 
                 Console.WriteLine($"email=======>>>{user}");
@@ -51,6 +54,9 @@ namespace Settle_App.Controllers
                         customerId: user.Id,
                         customerEmail: user.Email
                     );
+                    await transactionRepository.CreateTransactionAsync(settleAppUser: user, amount: transactionAmount, transactionReference: transactionReference,
+                                                                    paymentGateway: paymentInitializationRequest.PaymentGateway, transactionStatus: TransactionStatus.Pending, transactionType: TransactionType.WalletFunding);
+
                     Console.WriteLine($"_response=======>>>{_response}");
 
                     //update users transaction refrenece
@@ -69,8 +75,8 @@ namespace Settle_App.Controllers
                         customerEmail: user.Email,
                         transactionReference: transactionReference
                     );
-                    await transactionRepository.CreateTransactionAsync(settleAppUser: user, amount: paymentVerificationRequestDto.Amount, transactionReference: transactionReference,
-                                                                    paymentGateway: paymentVerificationRequestDto.PaymentGateway, transactionStatus: TransactionStatus.Completed, transactionType: TransactionType.WalletFunding);
+                    await transactionRepository.CreateTransactionAsync(settleAppUser: user, amount: transactionAmount, transactionReference: transactionReference,
+                                                                    paymentGateway: paymentInitializationRequest.PaymentGateway, transactionStatus: TransactionStatus.Pending, transactionType: TransactionType.WalletFunding);
 
                     // user.TransactionReference = _response.TransactionReference;
                     // var updateUser = await userManager.UpdateAsync(user);
@@ -80,9 +86,19 @@ namespace Settle_App.Controllers
                     // }
                     return Ok(_response);
                 }
+                else if (paymentInitializationRequest.PaymentGateway == PaymentGateway.Paystack)
+                {
+                    var _response = await paystackService.InitializePaymentAsync(
+                                            amount: paymentInitializationRequest.Amount,
+                                            customerEmail: user.Email,
+                                            transactionReference: transactionReference
+                                        );
+                    await transactionRepository.CreateTransactionAsync(settleAppUser: user, amount: transactionAmount, transactionReference: transactionReference,
+                                                                    paymentGateway: paymentInitializationRequest.PaymentGateway, transactionStatus: TransactionStatus.Pending, transactionType: TransactionType.WalletFunding);
+                    return Ok(_response);
+                }
                 else
                 {
-                    // Handle case where the PaymentGateway is None or Paystack or any other case
                     return BadRequest(new EndpointResponse { Status = "Error", Message = "Invalid Payment Gateway" });
                 }
             }
@@ -107,7 +123,7 @@ namespace Settle_App.Controllers
                 //     return NotFound("User not found or transaction mismatch.");
                 // }
                 var userWallet = await walletRepository.GetWalletByIdAsync(user.Id);
-                var userTransaction = await transactionRepository.GetTransactionByIdAsync(user.Id);
+                var userTransaction = await transactionRepository.GetTransactionByIdAsync(paymentVerificationRequestDto.SystemTransactionReference);
                 if (paymentVerificationRequestDto.PaymentGateway == PaymentGateway.Interswitch)
                 {
 
@@ -119,8 +135,11 @@ namespace Settle_App.Controllers
                     if (verifyPayment != null)
                     {
                         await walletRepository.UpdateWalletBalanceAsync(userWallet, paymentVerificationRequestDto.Amount);
-                        await transactionRepository.CreateTransactionAsync(settleAppUser: user, amount: paymentVerificationRequestDto.Amount,
-                                                                    paymentGateway: paymentVerificationRequestDto.PaymentGateway, transactionStatus: TransactionStatus.Completed, transactionType: TransactionType.WalletFunding);
+                        await transactionRepository.UpdateTransactionAsync(transaction: userTransaction, amount: paymentVerificationRequestDto.Amount, transactionStatus: TransactionStatus.Completed, transactionType: TransactionType.WalletFunding,
+                        paymentGateway: paymentVerificationRequestDto.PaymentGateway, transactionTime: DateTime.UtcNow);
+
+                        // await transactionRepository.CreateTransactionAsync(settleAppUser: user, amount: paymentVerificationRequestDto.Amount,
+                        //                                             paymentGateway: paymentVerificationRequestDto.PaymentGateway, transactionStatus: TransactionStatus.Completed, transactionType: TransactionType.WalletFunding);
 
                         return Ok(new { message = $"Payment verified and wallet updated with {paymentVerificationRequestDto.Amount} successfully." });
                     }
@@ -134,17 +153,35 @@ namespace Settle_App.Controllers
                     if (verifyPayment != null)
                     {
                         await walletRepository.UpdateWalletBalanceAsync(userWallet, paymentVerificationRequestDto.Amount);
-                        await transactionRepository.UpdateTransactionAsync(settleAppUser: user, amount: paymentVerificationRequestDto.Amount,
-                                                                    paymentGateway: paymentVerificationRequestDto.PaymentGateway, transactionStatus: TransactionStatus.Completed, transactionType: TransactionType.WalletFunding);
+                        await transactionRepository.UpdateTransactionAsync(transaction: userTransaction, amount: paymentVerificationRequestDto.Amount,
+                                                                            transactionStatus: TransactionStatus.Completed, transactionType: TransactionType.WalletFunding,
+                                                                            paymentGateway: paymentVerificationRequestDto.PaymentGateway, transactionTime: DateTime.UtcNow);
 
                         return Ok(new { message = $"Payment verified and wallet updated with {paymentVerificationRequestDto.Amount} successfully." });
                     }
 
                 }
 
+                else if (paymentVerificationRequestDto.PaymentGateway == PaymentGateway.Paystack)
+                {
+                    var verifyPayment = await paystackService.VerifyPaymentAsync(
+                    transactionReference: paymentVerificationRequestDto.TransactionReference,
+                    amount: paymentVerificationRequestDto.Amount);
 
+                    if (verifyPayment != null)
+                    {
+                        await walletRepository.UpdateWalletBalanceAsync(userWallet, paymentVerificationRequestDto.Amount);
+                        await transactionRepository.UpdateTransactionAsync(transaction: userTransaction, amount: paymentVerificationRequestDto.Amount,
+                                                                            transactionStatus: TransactionStatus.Completed, transactionType: TransactionType.WalletFunding,
+                                                                            paymentGateway: paymentVerificationRequestDto.PaymentGateway, transactionTime: DateTime.UtcNow);
 
+                        return Ok(new { message = $"Payment verified and wallet updated with {paymentVerificationRequestDto.Amount} successfully." });
+                    }
 
+                }
+                await transactionRepository.UpdateTransactionAsync(transaction: userTransaction, amount: paymentVerificationRequestDto.Amount,
+                                                            transactionStatus: TransactionStatus.Failed, transactionType: TransactionType.WalletFunding,
+                                                            paymentGateway: paymentVerificationRequestDto.PaymentGateway, transactionTime: DateTime.UtcNow);
 
                 return BadRequest(new { message = "Payment verification failed." });
             }
