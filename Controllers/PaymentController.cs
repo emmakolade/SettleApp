@@ -138,10 +138,7 @@ namespace Settle_App.Controllers
                         await transactionRepository.UpdateTransactionAsync(transaction: userTransaction, amount: paymentVerificationRequestDto.Amount, transactionStatus: TransactionStatus.Completed, transactionType: TransactionType.WalletFunding,
                         paymentGateway: paymentVerificationRequestDto.PaymentGateway, transactionTime: DateTime.UtcNow);
 
-                        // await transactionRepository.CreateTransactionAsync(settleAppUser: user, amount: paymentVerificationRequestDto.Amount,
-                        //                                             paymentGateway: paymentVerificationRequestDto.PaymentGateway, transactionStatus: TransactionStatus.Completed, transactionType: TransactionType.WalletFunding);
-
-                        return Ok(new { message = $"Payment verified and wallet updated with {paymentVerificationRequestDto.Amount} successfully." });
+                        return Ok(new { message = $"Payment verified and wallet updated with {paymentVerificationRequestDto.Amount / 100} successfully." });
                     }
                 }
                 else if (paymentVerificationRequestDto.PaymentGateway == PaymentGateway.FlutterWave)
