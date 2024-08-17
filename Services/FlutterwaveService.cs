@@ -7,7 +7,7 @@ using System;
 using System.Threading.Tasks;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.BearerToken;
-using Settle_App.Models.DTO;
+using Settle_App.Models.DTO.FlutterWave;
 using Azure.Core;
 using System.Net.Http.Json;
 
@@ -19,7 +19,7 @@ namespace Settle_App.Services
     {
         private readonly IConfiguration configuration = configuration;
 
-        public async Task<FlutterwavePaymentInitializationResponseDto> InitializePaymentAsync(string amount, string customerEmail, Guid transactionReference )
+        public async Task<FlutterwavePaymentInitializationResponseDto> InitializePaymentAsync(string amount, string customerEmail, Guid transactionReference)
         {
             try
             {
@@ -96,6 +96,47 @@ namespace Settle_App.Services
                 var verificationResponse = JsonSerializer.Deserialize<FlutterwavePaymentVerificationResponseDto>(response.Content);
 
                 if (verificationResponse.Amount == amount && verificationResponse.CurrencyCode == "NGN" && verificationResponse.Status == "successful")
+                {
+                    return verificationResponse;
+
+                }
+                else
+                {
+                    return new FlutterwavePaymentVerificationResponseDto { Status = "payment verification not successful" };
+                }
+
+            }
+            catch (Exception err)
+            {
+
+                throw new Exception($"{err.Message}");
+            }
+
+        }
+        public async Task<BillsCategoryResponseDto> FetchBillsCategory()
+        {
+            try
+            // MX6072
+            {
+                // LIVE BASE URL: https://webpay.interswitchng.com
+                var options = new RestClientOptions($"https://api.flutterwave.com/v3/top-bill-categories?country=NG");
+                var client = new RestClient(options);
+
+                var request = new RestRequest("");
+
+                request.AddHeader("Content-Type", "application/json");
+                request.AddHeader("Authorization", $"Bearer FLWSECK_TEST-750ef95bb6081c01e8b2290660911c0f-X");
+                var response = await client.GetAsync(request);
+                Console.WriteLine($"response====>{response.Content}");
+
+                if (string.IsNullOrEmpty(response.Content))
+                {
+                    throw new Exception($"No content was returned from the server: {response.Content}");
+                }
+
+                var billsCategory = JsonSerializer.Deserialize<BillsCategoryResponseDto>(response.Content);
+
+                if (billsCategory. Status == "succ")
                 {
                     return verificationResponse;
 

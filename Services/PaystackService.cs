@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication.BearerToken;
 using Settle_App.Models.DTO;
 using Azure.Core;
 using System.Net.Http.Json;
+using Settle_App.Models.DTO.Paystack;
 
 namespace Settle_App.Services
 {

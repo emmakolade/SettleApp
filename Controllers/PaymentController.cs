@@ -110,7 +110,7 @@ namespace Settle_App.Controllers
 
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("verify/fund-wallet")]
         // [Authorize]
         public async Task<IActionResult> VerifyPayment([FromQuery] PaymentVerificationRequestDto paymentVerificationRequestDto)
@@ -190,8 +190,7 @@ namespace Settle_App.Controllers
 
         }
 
-
-
+        
     }
 }
 
