@@ -116,9 +116,7 @@ namespace Settle_App.Services
         public async Task<BillsCategoryResponseDto> FetchBillsCategory()
         {
             try
-            // MX6072
             {
-                // LIVE BASE URL: https://webpay.interswitchng.com
                 var options = new RestClientOptions($"https://api.flutterwave.com/v3/top-bill-categories?country=NG");
                 var client = new RestClient(options);
 
@@ -136,14 +134,14 @@ namespace Settle_App.Services
 
                 var billsCategory = JsonSerializer.Deserialize<BillsCategoryResponseDto>(response.Content);
 
-                if (billsCategory. Status == "succ")
+                if (billsCategory.Status == "success")
                 {
-                    return verificationResponse;
+                    return billsCategory;
 
                 }
                 else
                 {
-                    return new FlutterwavePaymentVerificationResponseDto { Status = "payment verification not successful" };
+                    return new BillsCategoryResponseDto { Status = "Could not get bills category" };
                 }
 
             }
@@ -154,16 +152,208 @@ namespace Settle_App.Services
             }
 
         }
+        public async Task<BillersInfoResponseDto> FetchBillersInfo(string billerCode)
+        {
+            try
+            {
+                var options = new RestClientOptions($"https://api.flutterwave.com/v3/bills/category={billerCode}/billers?country=NG");
+                var client = new RestClient(options);
+
+                var request = new RestRequest("");
+
+                request.AddHeader("Content-Type", "application/json");
+                request.AddHeader("Authorization", $"Bearer FLWSECK_TEST-750ef95bb6081c01e8b2290660911c0f-X");
+                var response = await client.GetAsync(request);
+                Console.WriteLine($"response====>{response.Content}");
+
+                if (string.IsNullOrEmpty(response.Content))
+                {
+                    throw new Exception($"No content was returned from the server: {response.Content}");
+                }
+
+                var verificationResponse = JsonSerializer.Deserialize<BillersInfoResponseDto>(response.Content);
+
+                if (string.IsNullOrEmpty(response.Content))
+                {
+                    throw new Exception($"No content was returned from the server: {response.Content}");
+                }
+
+                var billerInfo = JsonSerializer.Deserialize<BillersInfoResponseDto>(response.Content);
+
+                if (billerInfo.Status == "success")
+                {
+                    return billerInfo;
+
+                }
+                else
+                {
+                    return new BillersInfoResponseDto { Status = "Could not get billers Info" };
+                }
+
+            }
+            catch (Exception err)
+            {
+
+                throw new Exception($"{err.Message}");
+            }
+
+        }
+
+        public async Task<BilsInfoResponseDto> FetchBillsInfo(string billerCode)
+        {
+            try
+            {
+                var options = new RestClientOptions($"https://api.flutterwave.com/v3/billers/biller_code={billerCode}/items");
+                var client = new RestClient(options);
+
+                var request = new RestRequest("");
+
+                request.AddHeader("Content-Type", "application/json");
+                request.AddHeader("Authorization", $"Bearer FLWSECK_TEST-750ef95bb6081c01e8b2290660911c0f-X");
+                var response = await client.GetAsync(request);
+                Console.WriteLine($"response====>{response.Content}");
+
+                if (string.IsNullOrEmpty(response.Content))
+                {
+                    throw new Exception($"No content was returned from the server: {response.Content}");
+                }
+
+                var verificationResponse = JsonSerializer.Deserialize<BilsInfoResponseDto>(response.Content);
+
+                if (string.IsNullOrEmpty(response.Content))
+                {
+                    throw new Exception($"No content was returned from the server: {response.Content}");
+                }
+
+                var billerInfo = JsonSerializer.Deserialize<BilsInfoResponseDto>(response.Content);
+
+                if (billerInfo.Status == "success")
+                {
+                    return billerInfo;
+
+                }
+                else
+                {
+                    return new BilsInfoResponseDto { Status = "Could not get bills Info" };
+                }
+
+            }
+            catch (Exception err)
+            {
+
+                throw new Exception($"{err.Message}");
+            }
+
+        }
+        public async Task<BillsInfoValidateResponseDto> ValidateBillsInfo(string itemCode, string billerCode, string customer)
+        {
+            // customer is either the phone number or the smart card number or for wifi it is the customer account number
+            // for electricity, the customer is the meter number ...
+            try
+            {
+                var options = new RestClientOptions($"https://api.flutterwave.com/v3/bill-items/item_code={itemCode}/validate?code={billerCode}&customer={customer}");
+                var client = new RestClient(options);
+
+                var request = new RestRequest("");
+
+                request.AddHeader("Content-Type", "application/json");
+                request.AddHeader("Authorization", $"Bearer FLWSECK_TEST-750ef95bb6081c01e8b2290660911c0f-X");
+                var response = await client.GetAsync(request);
+                Console.WriteLine($"response====>{response.Content}");
+
+                if (string.IsNullOrEmpty(response.Content))
+                {
+                    throw new Exception($"No content was returned from the server: {response.Content}");
+                }
+
+                var verificationResponse = JsonSerializer.Deserialize<BillsInfoValidateResponseDto>(response.Content);
+
+                if (string.IsNullOrEmpty(response.Content))
+                {
+                    throw new Exception($"No content was returned from the server: {response.Content}");
+                }
+
+                var billerInfo = JsonSerializer.Deserialize<BillsInfoValidateResponseDto>(response.Content);
+
+                if (billerInfo.Status == "success")
+                {
+                    return billerInfo;
+
+                }
+                else
+                {
+                    return new BillsInfoValidateResponseDto { Status = "Could not get billers Info" };
+                }
+
+            }
+            catch (Exception err)
+            {
+
+                throw new Exception($"{err.Message}");
+            }
+
+        }
+
+        public async Task<BillsInfoValidateResponseDto> CreateBillsPayment(string itemCode, string billerCode, string customer, decimal amount)
+        {
+            // customer is either the phone number or the smart card number or for wifi it is the customer account number
+            // for electricity, the customer is the meter number ...
+            try
+            {
+                var options = new RestClientOptions($"https://api.flutterwave.com/v3/billers/biller_code={billerCode}/items/item_code={itemCode}/payment");
+                var client = new RestClient(options);
+
+                var request = new RestRequest("");
+
+                request.AddHeader("Content-Type", "application/json");
+                request.AddHeader("Authorization", $"Bearer FLWSECK_TEST-750ef95bb6081c01e8b2290660911c0f-X");
+
+                var BillsInfoRequest = new BillsInfoRequestDto
+                {
+                    Country = "NG",
+                    Amount = amount,
+                    RedirectUrl = "https://bing.com",
+                    CustomerId = customer,
+                    Reference = Guid.NewGuid()
+                };
+                request.AddJsonBody(BillsInfoRequest);
+
+                var response = await client.PostAsync(request);
+                Console.WriteLine($"response====>{response.Content}");
+
+                if (string.IsNullOrEmpty(response.Content))
+                {
+                    throw new Exception($"No content was returned from the server: {response.Content}");
+                }
+
+                var verificationResponse = JsonSerializer.Deserialize<BillsInfoValidateResponseDto>(response.Content);
+
+                if (string.IsNullOrEmpty(response.Content))
+                {
+                    throw new Exception($"No content was returned from the server: {response.Content}");
+                }
+
+                var billerInfo = JsonSerializer.Deserialize<BillsInfoValidateResponseDto>(response.Content);
+
+                if (billerInfo.Status == "success")
+                {
+                    return billerInfo;
+
+                }
+                else
+                {
+                    return new BillsInfoValidateResponseDto { Status = "Could not get billers Info" };
+                }
+
+            }
+            catch (Exception err)
+            {
+
+                throw new Exception($"{err.Message}");
+            }
+
+        }
+
     }
 }
 
-/*
-
-var options = new RestClientOptions("https://qa.interswitchng.com/paymentgateway/api/v1/paybill");
-var client = new RestClient(options);
-var request = new RestRequest("");
-request.AddHeader("accept", "application/json");
-request.AddHeader("Authorization", "Bearer eyJhbGciOiJSUzI1NiJ9.eyJhdWQiOlsicGFzc3BvcnQiLCJwcm9qZWN0LXgtbWVyY2hhbnQiXSwic2NvcGUiOlsicHJvZmlsZSJdLCJ2aXJ0dWFsX2FjY291bnRfcHJvdmlkZXIiOiJXRU1BX1BST0QiLCJjbGllbnRfbmFtZSI6IldFTUEgVVNTRCIsImp0aSI6ImZmNWQ2NGIzLWQyZDYtNDc2ZC05NmVlLTUzZTAzYjE4ZmE2YiIsImNsaWVudF9pZCI6IklLSUE3ODlEQkNFRkZGMTIxNkI5NUY1NkFGNDIzNDlERTY2QTlGOUZGQzA1In0.SiLNe80_MERRYrC_Zjz3Pv8nzeK2qYS6o1gNdYoWd3pIaY7JsMo-sZKCyseZae3jXqMwhpSfyAvCM85UkzgsywPFx4oJK_KGt-eqzZbSEiDLXQb-3qsjNCDCqUYxRGfkGesodWvoh22oot196kSlnyLheH6k_TYgV8Ud84lwnAuwz8ydidaubue42vFMeYEfrIy99E2rhP2KJjcg0XGVzUh4RvDu1IR9BSSFN8zWjVcX5EOHEUzxt9CsioojiXKfdQ6YGGh7iLjb1qT8VWzu_CmewhuIFPHdDoTS0mJfulbykSWN3_5m_TFZpR7G3Ybwd5DVTfX9xLbwNJm_C3TL-Q");
-request.AddJsonBody("{\"merchantCode\":\"MX6072\",\"payableCode\":\"9405967\",\"amount\":\"5000\",\"redirectUrl\":\"https://webpay-ui.k8.isw.la/demo-response\",\"customerId\":\"johndoe@gmail.com\",\"currencyCode\":\"566\",\"customerEmail\":\"johndoe@gmail.com\"}", false);
-var response = await client.PostAsync(request);
-*/
